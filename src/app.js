@@ -64,14 +64,22 @@ app.patch("/user", async (req, res) => {
   const data = req.body;
   console.log(data);
   try {
-    const user = await User.findByIdAndUpdate({ _id: userId }, data);
+    const ALLOWED_UPDATES = ["age", "gender", "skills"]
+
+    const isUpdatesAllowed = Object.keys(data).every((k) => ALLOWED_UPDATES.includes(k))
+
+    if(!isUpdatesAllowed) {
+      throw new Error("Updates not allowed.")
+    }
+
+    const user = await User.findByIdAndUpdate({ _id: userId }, data, {runValidators: true});
     if (!user) {
       res.status(404).send("Not found");
     } else {
       res.json(user);
     }
   } catch (err) {
-    res.status(400).send("something went wrong");
+    res.status(400).send("Upload failed " + err.message);
   }
 });
 

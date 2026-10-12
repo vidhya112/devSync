@@ -1,87 +1,20 @@
 const express = require("express");
 const connectDB = require("./config/database");
-const User = require("./Models/user");
+const cookieParser = require("cookie-parser")
+
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser())
 
-app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
-  console.log(user);
+const authRouter = require("./routes/auth")
+const profileRouter = require("./routes/profile")
+const requestRouter = require("./routes/request")
 
-  try {
-    await user.save();
-    res.send("User added successfully", user);
-  } catch (err) {
-    res.status(400).send("Error adding user" + err.message);
-  }
-});
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
 
-app.get("/user", async (req, res) => {
-  const userEmailId = req.body.emailId;
-  console.log(userEmailId);
-
-  try {
-    const user = await User.findOne({ emailId: userEmailId });
-    console.log(user);
-
-    if (!user) {
-      res.status(404).send("User not found");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    res.status(400).send("something went wrong");
-  }
-});
-
-app.get("/feed", async (req, res) => {
-  // const userEmailId =  new User(req.body.emailId)
-  try {
-    const user = await User.find({});
-    if (user.length === 0) {
-      res.status(404).send("User not found");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    res.status(400).send("something went wrong");
-  }
-});
-
-app.delete("/user", async (req, res) => {
-  const id = req.body.userId;
-  try {
-    await User.findByIdAndDelete({ _id: id });
-    res.send("user deleted successfully");
-  } catch (err) {
-    res.status(400).send("something went wrong", err);
-  }
-});
-
-app.patch("/user", async (req, res) => {
-  const userId = req.body.id;
-  const data = req.body;
-  console.log(data);
-  try {
-    const ALLOWED_UPDATES = ["age", "gender", "skills"]
-
-    const isUpdatesAllowed = Object.keys(data).every((k) => ALLOWED_UPDATES.includes(k))
-
-    if(!isUpdatesAllowed) {
-      throw new Error("Updates not allowed.")
-    }
-
-    const user = await User.findByIdAndUpdate({ _id: userId }, data, {runValidators: true});
-    if (!user) {
-      res.status(404).send("Not found");
-    } else {
-      res.json(user);
-    }
-  } catch (err) {
-    res.status(400).send("Upload failed " + err.message);
-  }
-});
 
 connectDB()
   .then(() => {
